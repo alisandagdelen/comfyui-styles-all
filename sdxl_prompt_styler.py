@@ -106,27 +106,35 @@ class SDXLPromptStyler:
                     {"default": True, "label_on": "Yes", "label_off": "No"},
                 ),
             },
+            "optional": {
+                "json_output": (
+                    "STRING",
+                    {"default": "", "multiline": True, "readonly": True},
+                ),
+            },
         }
-
         return inputs
 
-    RETURN_TYPES = (
-        "STRING",
-        "STRING",
-    )
-    RETURN_NAMES = (
-        "text_positive",
-        "text_negative",
-    )
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("text_positive", "text_negative", "json_output")
     FUNCTION = "prompt_styler"
     CATEGORY = "AegisFlow/stylers"
 
     def prompt_styler(self, text_positive, text_negative, log_prompt, **kwargs):
         text_positive_styled, text_negative_styled = text_positive, text_negative
+        variables = {}
+
         for menu, selection in kwargs.items():
-            text_positive_styled, text_negative_styled = styler_data[menu][
-                selection
-            ].replace_prompts(text_positive_styled, text_negative_styled)
+            if selection and menu not in [
+                "text_positive",
+                "text_negative",
+                "log_prompt",
+                "json_output",
+            ]:
+                text_positive_styled, text_negative_styled = styler_data[menu][
+                    selection
+                ].replace_prompts(text_positive_styled, text_negative_styled)
+                variables[menu] = selection
 
         if log_prompt:
             for menu, selection in kwargs.items():
@@ -136,7 +144,14 @@ class SDXLPromptStyler:
             print(f"text_positive_styled: {text_positive_styled}")
             print(f"text_negative_styled: {text_negative_styled}")
 
-        return text_positive_styled, text_negative_styled
+        json_output = {
+            "itemId": "ITEMID_TO_CHANGE!!",
+            "variables": {k: v for k, v in variables.items() if v != "None"},
+        }
+
+        json_output_str = json.dumps(json_output, indent=4)
+
+        return text_positive_styled, text_negative_styled, json_output_str
 
 
 class SDXLPromptStylerAdvanced:
@@ -161,9 +176,16 @@ class SDXLPromptStylerAdvanced:
                     {"default": True, "label_on": "Yes", "label_off": "No"},
                 ),
             },
+            "optional": {
+                "json_output": (
+                    "STRING",
+                    {"default": "", "multiline": True, "readonly": True},
+                ),
+            },
         }
 
     RETURN_TYPES = (
+        "STRING",
         "STRING",
         "STRING",
         "STRING",
@@ -178,6 +200,7 @@ class SDXLPromptStylerAdvanced:
         "text_negative_g",
         "text_negative_l",
         "text_negative",
+        "json_output",
     )
     FUNCTION = "prompt_styler_advanced"
     CATEGORY = "AegisFlow/stylers"
@@ -215,6 +238,7 @@ class SDXLPromptStylerAdvanced:
                 text_negative_styled,
                 negative_prompt_to,
             )
+                variables[menu] = selection
 
         if log_prompt:
             for menu, selection in kwargs.items():
@@ -228,6 +252,12 @@ class SDXLPromptStylerAdvanced:
             print(f"text_negative_g_styled: {text_negative_g_styled}")
             print(f"text_negative_l_styled: {text_negative_l_styled}")
             print(f"text_negative_styled: {text_negative_styled}")
+        json_output = {
+            "itemId": "ITEMID_TO_CHANGE!!",
+            "variables": {k: v for k, v in variables.items() if v != "None"},
+        }
+
+        json_output_str = json.dumps(json_output, indent=4)
 
         return (
             text_positive_g_styled,
@@ -236,6 +266,7 @@ class SDXLPromptStylerAdvanced:
             text_negative_g_styled,
             text_negative_l_styled,
             text_negative_styled,
+            json_output_str,
         )
 
 
